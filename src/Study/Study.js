@@ -393,7 +393,7 @@ function Study() {
         </Box>
 
         {/* NAVIGATION BUTTONS */}
-        <Box sx={{ mt: 3 }}>
+        {/* <Box sx={{ mt: 3 }}>
           <Button
             variant="outlined"
             sx={{ mr: 2 }}
@@ -409,7 +409,7 @@ function Study() {
           >
             Next
           </Button>
-        </Box>
+        </Box> */}
 
         <Box sx={{ mt: 3 }}>
           <Button variant="contained" onClick={handleBackToCategories}>

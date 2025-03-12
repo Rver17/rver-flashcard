@@ -191,7 +191,7 @@ function Flashcards() {
               sx={{ mb: 2 }}
             />
             <TextField
-              label="Category"
+              label="Deck"
               name="category"
               fullWidth
               value={newFlashcard.category}
@@ -223,7 +223,7 @@ function Flashcards() {
           Object.keys(groupedFlashcards).map((category, idx) => (
             <Box key={idx} sx={{ mt: 4, textAlign: "center" }}>
               <Typography variant="h5" gutterBottom>
-                Category: {category}
+                Deck: {category}
               </Typography>
               {groupedFlashcards[category].map((card) => (
                 <Card key={card.id} sx={{ mb: 2, mx: "auto", maxWidth: 400 }}>

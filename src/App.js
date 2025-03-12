@@ -6,6 +6,7 @@ import LightModeIcon from "@mui/icons-material/LightMode";
 import Home from "./Home";
 import Flashcards from "./Flashcard/Flashcard";
 import Study from "./Study/Study";
+import History from "./History/History";
 import { ThemeContext, ThemeProviderComponent } from "./ThemeContext";
 
 function DarkModeToggle() {
@@ -40,6 +41,7 @@ function App() {
           <Route path="/" element={<HomeWithDarkMode />} />
           <Route path="/flashcards" element={<Flashcards />} />
           <Route path="/study" element={<Study />} />
+          <Route path="/history" element={<History />} />
         </Routes>
       </Router>
     </ThemeProviderComponent>

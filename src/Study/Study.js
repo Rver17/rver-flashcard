@@ -31,6 +31,8 @@ function Study() {
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [feedback, setFeedback] = useState("");
   const [score, setScore] = useState(0); // Track correct answers
+  const [sessionResults, setSessionResults] = useState([]); // Detailed results per flashcard
+  const [sessionSaved, setSessionSaved] = useState(false); // Ensure we save history only once
 
   // Load flashcards from SecureLS
   useEffect(() => {
@@ -79,13 +81,39 @@ function Study() {
     // eslint-disable-next-line
   }, [selectedCategory, currentIndex]);
 
+  // Save study session to SecureLS when finished (only once)
+  useEffect(() => {
+    if (currentIndex === categoryCards.length && !sessionSaved) {
+      const newSession = {
+        category: selectedCategory,
+        date: new Date().toISOString(),
+        score,
+        total: categoryCards.length,
+        sessionResults,
+      };
+      const existingHistory = ls.get("studyHistory") || [];
+      const updatedHistory = [...existingHistory, newSession];
+      ls.set("studyHistory", updatedHistory);
+      setSessionSaved(true);
+    }
+  }, [
+    currentIndex,
+    sessionSaved,
+    categoryCards.length,
+    selectedCategory,
+    score,
+    sessionResults,
+  ]);
+
   // Handle category selection
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
     setCurrentIndex(0);
     setSelectedAnswer("");
     setFeedback("");
-    setScore(0); // Reset score for new category
+    setScore(0);
+    setSessionResults([]);
+    setSessionSaved(false);
   };
 
   // Swipe handlers
@@ -108,17 +136,28 @@ function Study() {
     trackMouse: true,
   });
 
-  // Handle user choice
+  // Handle user choice and record detailed result
   const handleOptionClick = (option) => {
     if (selectedAnswer) return;
     setSelectedAnswer(option);
     const currentCard = categoryCards[currentIndex];
-    if (option === currentCard.answer) {
+    const isCorrect = option === currentCard.answer;
+    if (isCorrect) {
       setFeedback("Correct");
-      setScore(score + 1); // Increase score on correct answer
+      setScore((prevScore) => prevScore + 1);
     } else {
       setFeedback("Incorrect");
     }
+    setSessionResults((prevResults) => [
+      ...prevResults,
+      {
+        cardId: currentCard.id,
+        title: currentCard.title,
+        userAnswer: option,
+        correctAnswer: currentCard.answer,
+        isCorrect,
+      },
+    ]);
   };
 
   // Reset to category selection
@@ -128,6 +167,8 @@ function Study() {
     setSelectedAnswer("");
     setFeedback("");
     setScore(0);
+    setSessionResults([]);
+    setSessionSaved(false);
   };
 
   // If no category is chosen yet, show categories
@@ -182,10 +223,9 @@ function Study() {
     );
   }
 
-  // Show final score after finishing all flashcards (final screen at index equal to categoryCards.length)
+  // Final screen: Show session results after finishing all flashcards
   if (currentIndex === categoryCards.length) {
-    const totalQuestions = categoryCards.length;
-    const scorePercentage = (score / totalQuestions) * 100;
+    const percentage = (score / categoryCards.length) * 100;
     return (
       <>
         <DefaultHeader />
@@ -195,9 +235,9 @@ function Study() {
           </Typography>
           <Typography
             variant="h6"
-            sx={{ color: scorePercentage >= 50 ? "green" : "red" }}
+            sx={{ color: percentage >= 50 ? "green" : "red" }}
           >
-            Score: {score} / {totalQuestions} ({scorePercentage.toFixed(2)}%)
+            Score: {score} / {categoryCards.length} ({percentage.toFixed(2)}%)
           </Typography>
           <Button
             variant="contained"

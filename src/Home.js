@@ -11,6 +11,7 @@ import {
 import { Link } from "react-router-dom";
 import ArticleIcon from "@mui/icons-material/Article";
 import SchoolIcon from "@mui/icons-material/School";
+import HistoryIcon from "@mui/icons-material/History";
 import { ThemeContext } from "./ThemeContext";
 import { keyframes } from "@mui/system";
 
@@ -37,7 +38,7 @@ function Home() {
   return (
     <Box
       sx={{
-        minHeight: "100vh", // Make it full screen height
+        minHeight: "100vh", // Full screen height
         textAlign: "center",
         bgcolor: theme.palette.background.default,
         color: theme.palette.text.primary,
@@ -53,14 +54,11 @@ function Home() {
         <Grid item>
           <Card
             sx={{
-              width: { xs: 200, sm: 250 }, // responsive width
-              height: { xs: 200, sm: 250 }, // responsive height
+              width: { xs: 200, sm: 250 },
+              height: { xs: 200, sm: 250 },
               bgcolor: darkMode ? "grey.800" : "white",
-              // Add a hover bounce effect:
               transition: "transform 0.3s",
-              "&:hover": {
-                animation: `${bounce} 1s`,
-              },
+              "&:hover": { animation: `${bounce} 1s` },
             }}
           >
             <CardActionArea
@@ -90,9 +88,7 @@ function Home() {
               height: { xs: 200, sm: 250 },
               bgcolor: darkMode ? "grey.800" : "white",
               transition: "transform 0.3s",
-              "&:hover": {
-                animation: `${bounce} 1s`,
-              },
+              "&:hover": { animation: `${bounce} 1s` },
             }}
           >
             <CardActionArea
@@ -109,6 +105,36 @@ function Home() {
               <SchoolIcon sx={{ fontSize: 60, mb: 1 }} />
               <CardContent>
                 <Typography variant="h6">Study</Typography>
+              </CardContent>
+            </CardActionArea>
+          </Card>
+        </Grid>
+
+        {/* HISTORY CARD */}
+        <Grid item>
+          <Card
+            sx={{
+              width: { xs: 200, sm: 250 },
+              height: { xs: 200, sm: 250 },
+              bgcolor: darkMode ? "grey.800" : "white",
+              transition: "transform 0.3s",
+              "&:hover": { animation: `${bounce} 1s` },
+            }}
+          >
+            <CardActionArea
+              component={Link}
+              to="/history"
+              sx={{
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <HistoryIcon sx={{ fontSize: 60, mb: 1 }} />
+              <CardContent>
+                <Typography variant="h6">History</Typography>
               </CardContent>
             </CardActionArea>
           </Card>

@@ -77,14 +77,20 @@ function Flashcards() {
   };
 
   const handleSave = () => {
+    const capitalizedCategory = newFlashcard.category
+      ? newFlashcard.category.charAt(0).toUpperCase() +
+        newFlashcard.category.slice(1).toLowerCase()
+      : "";
+    const flashcardToSave = { ...newFlashcard, category: capitalizedCategory };
+
     if (editMode) {
       const updatedFlashcards = flashcards.map((card) =>
-        card.id === currentId ? { ...card, ...newFlashcard } : card
+        card.id === currentId ? { ...card, ...flashcardToSave } : card
       );
       setFlashcards(updatedFlashcards);
       saveFlashcards(updatedFlashcards);
     } else {
-      const newCard = { id: Date.now(), ...newFlashcard };
+      const newCard = { id: Date.now(), ...flashcardToSave };
       const updatedFlashcards = [...flashcards, newCard];
       setFlashcards(updatedFlashcards);
       saveFlashcards(updatedFlashcards);
@@ -184,7 +190,15 @@ function Flashcards() {
           </DialogContent>
           <DialogActions>
             <Button onClick={handleDialogClose}>Cancel</Button>
-            <Button onClick={handleSave} variant="contained">
+            <Button
+              onClick={handleSave}
+              variant="contained"
+              disabled={
+                !newFlashcard.title.trim() ||
+                !newFlashcard.answer.trim() ||
+                !newFlashcard.category.trim()
+              }
+            >
               {editMode ? "Update" : "Save"}
             </Button>
           </DialogActions>

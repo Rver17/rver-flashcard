@@ -150,7 +150,11 @@ function Flashcards() {
         </Button>
         <Button
           variant="outlined"
-          onClick={() => setFlashcards(sampleFlashcards)}
+          onClick={() => {
+            const updatedCards = [...flashcards, ...sampleFlashcards];
+            setFlashcards(updatedCards);
+            saveFlashcards(updatedCards);
+          }}
           sx={{ m: 1 }}
         >
           Load Sample Data

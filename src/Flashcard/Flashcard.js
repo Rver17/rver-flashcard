@@ -69,6 +69,13 @@ function Flashcards() {
     setOpen(true);
   };
 
+  // Add this function in your Flashcards component
+  const handleDelete = (id) => {
+    const newFlashcards = flashcards.filter((f) => f.id !== id);
+    setFlashcards(newFlashcards);
+    saveFlashcards(newFlashcards);
+  };
+
   const handleDialogClose = () => {
     setOpen(false);
     setNewFlashcard({ title: "", answer: "", category: "" });
@@ -187,13 +194,7 @@ function Flashcards() {
                     <IconButton onClick={() => handleDialogOpen(card)}>
                       <EditIcon />
                     </IconButton>
-                    <IconButton
-                      onClick={() =>
-                        saveFlashcards(
-                          flashcards.filter((f) => f.id !== card.id)
-                        )
-                      }
-                    >
+                    <IconButton onClick={() => handleDelete(card.id)}>
                       <DeleteIcon />
                     </IconButton>
                   </CardContent>

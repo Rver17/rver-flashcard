@@ -35,6 +35,7 @@ function Study() {
   const [sessionResults, setSessionResults] = useState([]);
   const [sessionSaved, setSessionSaved] = useState(false);
   const [sessionDeck, setSessionDeck] = useState([]);
+  const [attempts, setAttempts] = useState({});
   const [lives, setLives] = useState(5);
   const [isWaiting, setIsWaiting] = useState(false);
   const [blink, setBlink] = useState(false);
@@ -111,6 +112,7 @@ function Study() {
         score,
         total: categoryCards.length,
         sessionResults,
+        attemptsStats: attempts,
       };
       const existingHistory = ls.get("studyHistory") || [];
       const updatedHistory = [...existingHistory, newSession];
@@ -124,6 +126,7 @@ function Study() {
     selectedCategory,
     score,
     sessionResults,
+    attempts,
   ]);
 
   // Select category, build a deck
@@ -165,6 +168,10 @@ function Study() {
     if (selectedAnswer || isWaiting) return;
 
     const currentCard = sessionDeck[currentIndex];
+    setAttempts((prev) => ({
+      ...prev,
+      [currentCard.id]: (prev[currentCard.id] || 0) + 1,
+    }));
     console.log("User clicked:", option);
     console.log("Currently displayed question:", currentCard.title);
     console.log("Correct answer:", currentCard.answer);

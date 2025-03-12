@@ -329,7 +329,7 @@ function Study() {
       <DefaultHeader />
       <Box sx={{ p: 2, textAlign: "center" }}>
         <Typography variant="h4" gutterBottom>
-          Studying Category: {selectedCategory}
+          Studying Deck: {selectedCategory}
         </Typography>
         <Box sx={{ mt: 1 }}>
           <Typography variant="body1">

@@ -13,7 +13,7 @@ import {
 
 const ls = new SecureLS({ encodingType: "aes" });
 
-// Utility to shuffle arrays
+// Utility to shuffle arrays once
 function shuffleArray(array) {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -28,11 +28,16 @@ function Study() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [options, setOptions] = useState([]);
+  const [optionsByCard, setOptionsByCard] = useState({});
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [feedback, setFeedback] = useState("");
-  const [score, setScore] = useState(0); // Track correct answers
-  const [sessionResults, setSessionResults] = useState([]); // Detailed results per flashcard
-  const [sessionSaved, setSessionSaved] = useState(false); // Ensure we save history only once
+  const [score, setScore] = useState(0);
+  const [sessionResults, setSessionResults] = useState([]);
+  const [sessionSaved, setSessionSaved] = useState(false);
+  const [sessionDeck, setSessionDeck] = useState([]);
+  const [lives, setLives] = useState(5);
+  const [isWaiting, setIsWaiting] = useState(false);
+  const [blink, setBlink] = useState(false);
 
   // Load flashcards from SecureLS
   useEffect(() => {
@@ -59,27 +64,43 @@ function Study() {
     (fc) => fc.category === selectedCategory
   );
 
-  // Generate multiple-choice options whenever we move to a new flashcard
+  // Generate multiple-choice options only once per card
   useEffect(() => {
     if (
       selectedCategory &&
-      categoryCards.length > 0 &&
-      currentIndex < categoryCards.length
+      sessionDeck.length > 0 &&
+      currentIndex < sessionDeck.length
     ) {
-      const currentCard = categoryCards[currentIndex];
-      let distractors = categoryCards
-        .filter((card) => card.id !== currentCard.id)
-        .map((card) => card.answer);
-      distractors = shuffleArray(distractors).slice(0, 3);
-      const allOptions = shuffleArray([currentCard.answer, ...distractors]);
-      setOptions(allOptions);
+      const currentCard = sessionDeck[currentIndex];
+      if (optionsByCard[currentCard.id]) {
+        setOptions(optionsByCard[currentCard.id]);
+      } else {
+        // Ensure correct answer is always included; pick up to 3 distractors
+        let distractors = sessionDeck
+          .filter((card) => card.id !== currentCard.id)
+          .map((card) => card.answer)
+          .filter(
+            (ans) =>
+              ans.trim().toLowerCase() !==
+              currentCard.answer.trim().toLowerCase()
+          )
+          .slice(0, 3);
+
+        const optionSet = [currentCard.answer, ...distractors];
+        const generatedOptions = shuffleArray(optionSet);
+        setOptionsByCard((prev) => ({
+          ...prev,
+          [currentCard.id]: generatedOptions,
+        }));
+        setOptions(generatedOptions);
+      }
     } else {
       setOptions([]);
     }
+    // Reset selection & feedback each time we load a new card
     setSelectedAnswer("");
     setFeedback("");
-    // eslint-disable-next-line
-  }, [selectedCategory, currentIndex]);
+  }, [selectedCategory, currentIndex, sessionDeck, optionsByCard]);
 
   // Save study session to SecureLS when finished (only once)
   useEffect(() => {
@@ -105,15 +126,18 @@ function Study() {
     sessionResults,
   ]);
 
-  // Handle category selection
+  // Select category, build a deck
   const handleCategorySelect = (category) => {
     setSelectedCategory(category);
+    const deck = flashcards.filter((fc) => fc.category === category);
+    setSessionDeck(deck);
     setCurrentIndex(0);
     setSelectedAnswer("");
     setFeedback("");
     setScore(0);
     setSessionResults([]);
     setSessionSaved(false);
+    setLives(5);
   };
 
   // Swipe handlers
@@ -129,38 +153,75 @@ function Study() {
     }
   };
 
-  // react-swipeable setup
+  // react-swipeable
   const swipeHandlers = useSwipeable({
     onSwipedLeft: handleNext,
     onSwipedRight: handlePrev,
     trackMouse: true,
   });
 
-  // Handle user choice and record detailed result
+  // Handle user choice
   const handleOptionClick = (option) => {
-    if (selectedAnswer) return;
+    if (selectedAnswer || isWaiting) return;
+
+    const currentCard = sessionDeck[currentIndex];
+    // Debug logs
+    console.log("User clicked:", option);
+    console.log("Currently displayed question:", currentCard.title);
+    console.log("Correct answer:", currentCard.answer);
+
+    // Mark user selection
     setSelectedAnswer(option);
-    const currentCard = categoryCards[currentIndex];
-    const isCorrect = option === currentCard.answer;
-    if (isCorrect) {
-      setFeedback("Correct");
-      setScore((prevScore) => prevScore + 1);
-    } else {
-      setFeedback("Incorrect");
-    }
-    setSessionResults((prevResults) => [
-      ...prevResults,
+    const isCorrect =
+      option.trim().toLowerCase() === currentCard.answer.trim().toLowerCase();
+
+    // Record the attempt
+    setSessionResults((prev) => [
+      ...prev,
       {
         cardId: currentCard.id,
         title: currentCard.title,
-        userAnswer: option,
-        correctAnswer: currentCard.answer,
+        answerRecord: isCorrect ? option : `${option} -> ${currentCard.answer}`,
         isCorrect,
       },
     ]);
+
+    if (isCorrect) {
+      setFeedback("Correct");
+      setScore((prevScore) => prevScore + 1);
+      // Move to the next card after a short delay
+      setTimeout(() => {
+        setFeedback("");
+        setCurrentIndex((prevIndex) => prevIndex + 1);
+      }, 1000);
+    } else {
+      setFeedback("Incorrect");
+      setBlink(true);
+      setLives((prevLives) => prevLives - 1);
+      setIsWaiting(true);
+      // Immediately clear selectedAnswer
+      setSelectedAnswer("");
+
+      // Wait, then re-queue the wrong card and move on
+      const oldIndex = currentIndex; // capture the current index
+      setTimeout(() => {
+        setBlink(false);
+        setFeedback("");
+        setIsWaiting(false);
+
+        // Re-queue the card that was wrong
+        const newDeck = [...sessionDeck];
+        const [wrongCard] = newDeck.splice(oldIndex, 1);
+        newDeck.push(wrongCard);
+        setSessionDeck(newDeck);
+
+        // Move to the next question
+        setCurrentIndex((prevIndex) => prevIndex + 1);
+      }, 1000);
+    }
   };
 
-  // Reset to category selection
+  // Back to categories
   const handleBackToCategories = () => {
     setSelectedCategory("");
     setCurrentIndex(0);
@@ -171,7 +232,7 @@ function Study() {
     setSessionSaved(false);
   };
 
-  // If no category is chosen yet, show categories
+  // If no category is chosen, list categories
   if (!selectedCategory) {
     return (
       <>
@@ -206,7 +267,7 @@ function Study() {
     );
   }
 
-  // If category is selected but no cards exist for it
+  // If category is selected but no cards exist
   if (categoryCards.length === 0) {
     return (
       <>
@@ -223,8 +284,8 @@ function Study() {
     );
   }
 
-  // Final screen: Show session results after finishing all flashcards
-  if (currentIndex === categoryCards.length) {
+  // Finished all cards in category
+  if (currentIndex === sessionDeck.length) {
     const percentage = (score / categoryCards.length) * 100;
     return (
       <>
@@ -252,9 +313,9 @@ function Study() {
   }
 
   // Current flashcard
-  const currentCard = categoryCards[currentIndex];
+  const currentCard = sessionDeck[currentIndex];
 
-  // Dynamic background color based on feedback
+  // Card background based on feedback
   const cardBackground =
     feedback === "Correct"
       ? "success.light"
@@ -269,6 +330,14 @@ function Study() {
         <Typography variant="h4" gutterBottom>
           Studying Category: {selectedCategory}
         </Typography>
+        <Box sx={{ mt: 1 }}>
+          <Typography variant="body1">
+            Lives: {"❤️".repeat(lives)} {"🤍".repeat(Math.max(5 - lives, 0))}
+          </Typography>
+          <Typography variant="body2">
+            Progress: {currentIndex + 1} / {sessionDeck.length}
+          </Typography>
+        </Box>
 
         {/* SWIPE AREA */}
         <Box {...swipeHandlers} sx={{ mx: "auto", maxWidth: 500 }}>
@@ -289,27 +358,30 @@ function Study() {
 
           {/* MULTIPLE CHOICE OPTIONS */}
           <Grid container spacing={2} justifyContent="center">
-            {options.map((option, idx) => (
-              <Grid item xs={12} sm={6} key={idx}>
-                <Button
-                  variant="contained"
-                  color={
-                    selectedAnswer
-                      ? option === currentCard.answer
-                        ? "success"
-                        : option === selectedAnswer
-                        ? "error"
-                        : "primary"
-                      : "primary"
-                  }
-                  fullWidth
-                  onClick={() => handleOptionClick(option)}
-                  disabled={!!selectedAnswer}
-                >
-                  {option}
-                </Button>
-              </Grid>
-            ))}
+            {options.map((option, idx) => {
+              // Determine color
+              let buttonColor = "primary";
+              if (selectedAnswer) {
+                const correct =
+                  option.trim().toLowerCase() ===
+                  currentCard.answer.trim().toLowerCase();
+                if (correct) buttonColor = "success";
+                else if (option === selectedAnswer) buttonColor = "error";
+              }
+              return (
+                <Grid item xs={12} sm={6} key={idx}>
+                  <Button
+                    variant="contained"
+                    color={buttonColor}
+                    fullWidth
+                    onClick={() => handleOptionClick(option)}
+                    disabled={!!selectedAnswer}
+                  >
+                    {option}
+                  </Button>
+                </Grid>
+              );
+            })}
           </Grid>
         </Box>
 

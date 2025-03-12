@@ -22,14 +22,22 @@ function DarkModeToggle() {
   );
 }
 
+function HomeWithDarkMode() {
+  return (
+    <>
+      <DarkModeToggle />
+      <Home />
+    </>
+  );
+}
+
 function App() {
   return (
     <ThemeProviderComponent>
       <CssBaseline />
       <Router>
-        <DarkModeToggle />
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<HomeWithDarkMode />} />
           <Route path="/flashcards" element={<Flashcards />} />
           <Route path="/study" element={<Study />} />
         </Routes>

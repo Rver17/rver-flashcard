@@ -30,6 +30,7 @@ function Study() {
   const [options, setOptions] = useState([]);
   const [selectedAnswer, setSelectedAnswer] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [score, setScore] = useState(0); // Track correct answers
 
   // Load flashcards from SecureLS
   useEffect(() => {
@@ -64,18 +65,15 @@ function Study() {
       currentIndex < categoryCards.length
     ) {
       const currentCard = categoryCards[currentIndex];
-      // Collect possible distractors from other cards in the same category
       let distractors = categoryCards
         .filter((card) => card.id !== currentCard.id)
         .map((card) => card.answer);
       distractors = shuffleArray(distractors).slice(0, 3);
-      // Combine the correct answer with distractors and shuffle
       const allOptions = shuffleArray([currentCard.answer, ...distractors]);
       setOptions(allOptions);
     } else {
       setOptions([]);
     }
-    // Reset any previous selection/feedback
     setSelectedAnswer("");
     setFeedback("");
     // eslint-disable-next-line
@@ -87,11 +85,12 @@ function Study() {
     setCurrentIndex(0);
     setSelectedAnswer("");
     setFeedback("");
+    setScore(0); // Reset score for new category
   };
 
   // Swipe handlers
   const handleNext = () => {
-    if (currentIndex < categoryCards.length - 1) {
+    if (currentIndex < categoryCards.length) {
       setCurrentIndex(currentIndex + 1);
     }
   };
@@ -106,16 +105,17 @@ function Study() {
   const swipeHandlers = useSwipeable({
     onSwipedLeft: handleNext,
     onSwipedRight: handlePrev,
-    trackMouse: true, // optional, lets you swipe with mouse drag
+    trackMouse: true,
   });
 
   // Handle user choice
   const handleOptionClick = (option) => {
-    if (selectedAnswer) return; // Prevent changing answer once selected
+    if (selectedAnswer) return;
     setSelectedAnswer(option);
     const currentCard = categoryCards[currentIndex];
     if (option === currentCard.answer) {
       setFeedback("Correct");
+      setScore(score + 1); // Increase score on correct answer
     } else {
       setFeedback("Incorrect");
     }
@@ -127,6 +127,7 @@ function Study() {
     setCurrentIndex(0);
     setSelectedAnswer("");
     setFeedback("");
+    setScore(0);
   };
 
   // If no category is chosen yet, show categories
@@ -181,16 +182,28 @@ function Study() {
     );
   }
 
-  // If the user has moved beyond the last flashcard
-  if (currentIndex >= categoryCards.length) {
+  // Show final score after finishing all flashcards (final screen at index equal to categoryCards.length)
+  if (currentIndex === categoryCards.length) {
+    const totalQuestions = categoryCards.length;
+    const scorePercentage = (score / totalQuestions) * 100;
     return (
       <>
         <DefaultHeader />
         <Box sx={{ p: 2, textAlign: "center" }}>
           <Typography variant="h5" gutterBottom>
-            You've finished studying all flashcards in "{selectedCategory}"!
+            Study Session Completed!
           </Typography>
-          <Button variant="contained" onClick={handleBackToCategories}>
+          <Typography
+            variant="h6"
+            sx={{ color: scorePercentage >= 50 ? "green" : "red" }}
+          >
+            Score: {score} / {totalQuestions} ({scorePercentage.toFixed(2)}%)
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={handleBackToCategories}
+            sx={{ mt: 2 }}
+          >
             Back to Categories
           </Button>
         </Box>
@@ -260,7 +273,7 @@ function Study() {
           </Grid>
         </Box>
 
-        {/* NAVIGATION BUTTONS (Optional) */}
+        {/* NAVIGATION BUTTONS */}
         <Box sx={{ mt: 3 }}>
           <Button
             variant="outlined"
@@ -273,7 +286,7 @@ function Study() {
           <Button
             variant="outlined"
             onClick={handleNext}
-            disabled={currentIndex === categoryCards.length - 1}
+            disabled={currentIndex === categoryCards.length}
           >
             Next
           </Button>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import SecureLS from "secure-ls";
 import Swal from "sweetalert2";
 import DefaultHeader from "../DefaultHeader";
+import sampleFlashcards from "./Demo";
 import {
   Box,
   Card,
@@ -23,6 +24,7 @@ const ls = new SecureLS({ encodingType: "aes" });
 
 function Flashcards() {
   const [flashcards, setFlashcards] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [currentId, setCurrentId] = useState(null);
@@ -34,7 +36,7 @@ function Flashcards() {
 
   useEffect(() => {
     try {
-      const storedFlashcards = ls.get("flashcards");
+      let storedFlashcards = ls.get("flashcards");
       if (storedFlashcards && Array.isArray(storedFlashcards)) {
         setFlashcards(storedFlashcards);
       } else {
@@ -77,40 +79,17 @@ function Flashcards() {
     setNewFlashcard((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSaveFlashcard = () => {
-    let updatedFlashcards;
-    if (editMode) {
-      updatedFlashcards = flashcards.map((card) =>
-        card.id === currentId ? { ...card, ...newFlashcard } : card
-      );
-    } else {
-      updatedFlashcards = [...flashcards, { id: Date.now(), ...newFlashcard }];
-    }
-    setFlashcards(updatedFlashcards);
-    saveFlashcards(updatedFlashcards);
-    handleDialogClose();
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value.toLowerCase());
   };
 
-  const handleDeleteFlashcard = (id) => {
-    Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to recover this flashcard!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        const updatedFlashcards = flashcards.filter((card) => card.id !== id);
-        setFlashcards(updatedFlashcards);
-        saveFlashcards(updatedFlashcards);
-        Swal.fire("Deleted!", "Your flashcard has been deleted.", "success");
-      }
-    });
-  };
+  const filteredFlashcards = flashcards.filter(
+    (card) =>
+      card.title.toLowerCase().includes(searchQuery) ||
+      card.category.toLowerCase().includes(searchQuery)
+  );
 
-  const groupedFlashcards = flashcards.reduce((groups, card) => {
+  const groupedFlashcards = filteredFlashcards.reduce((groups, card) => {
     const { category } = card;
     if (!groups[category]) {
       groups[category] = [];
@@ -126,8 +105,26 @@ function Flashcards() {
         <Typography variant="h4" gutterBottom>
           FLASHCARD
         </Typography>
-        <Button variant="contained" onClick={() => handleDialogOpen()}>
+        <TextField
+          label="Search by Title or Category"
+          variant="outlined"
+          fullWidth
+          onChange={handleSearchChange}
+          sx={{ mb: 2 }}
+        />
+        <Button
+          variant="contained"
+          onClick={() => handleDialogOpen()}
+          sx={{ m: 1 }}
+        >
           Add Flashcard
+        </Button>
+        <Button
+          variant="outlined"
+          onClick={() => setFlashcards(sampleFlashcards)}
+          sx={{ m: 1 }}
+        >
+          Load Sample Data
         </Button>
 
         <Divider sx={{ my: 2 }} />
@@ -138,37 +135,33 @@ function Flashcards() {
           </DialogTitle>
           <DialogContent>
             <TextField
-              autoFocus
-              margin="dense"
               label="Title"
               name="title"
               fullWidth
-              variant="outlined"
               value={newFlashcard.title}
               onChange={handleInputChange}
             />
             <TextField
-              margin="dense"
               label="Answer"
               name="answer"
               fullWidth
-              variant="outlined"
               value={newFlashcard.answer}
               onChange={handleInputChange}
             />
             <TextField
-              margin="dense"
               label="Category"
               name="category"
               fullWidth
-              variant="outlined"
               value={newFlashcard.category}
               onChange={handleInputChange}
             />
           </DialogContent>
           <DialogActions>
             <Button onClick={handleDialogClose}>Cancel</Button>
-            <Button onClick={handleSaveFlashcard} variant="contained">
+            <Button
+              onClick={() => saveFlashcards(filteredFlashcards)}
+              variant="contained"
+            >
               {editMode ? "Update" : "Save"}
             </Button>
           </DialogActions>
@@ -176,7 +169,7 @@ function Flashcards() {
 
         {Object.keys(groupedFlashcards).length === 0 ? (
           <Typography variant="body1" sx={{ mt: 2 }}>
-            No flashcards added yet.
+            No flashcards found.
           </Typography>
         ) : (
           Object.keys(groupedFlashcards).map((category, idx) => (
@@ -194,7 +187,13 @@ function Flashcards() {
                     <IconButton onClick={() => handleDialogOpen(card)}>
                       <EditIcon />
                     </IconButton>
-                    <IconButton onClick={() => handleDeleteFlashcard(card.id)}>
+                    <IconButton
+                      onClick={() =>
+                        saveFlashcards(
+                          flashcards.filter((f) => f.id !== card.id)
+                        )
+                      }
+                    >
                       <DeleteIcon />
                     </IconButton>
                   </CardContent>

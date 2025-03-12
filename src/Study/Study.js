@@ -38,7 +38,6 @@ function Study() {
   const [attempts, setAttempts] = useState({});
   const [lives, setLives] = useState(5);
   const [isWaiting, setIsWaiting] = useState(false);
-  const [blink, setBlink] = useState(false);
 
   // Load flashcards from SecureLS
   useEffect(() => {
@@ -201,13 +200,11 @@ function Study() {
     } else {
       if (lives > 0) {
         setFeedback("Incorrect");
-        setBlink(true);
         setLives((prevLives) => Math.max(prevLives - 1, 0));
         setIsWaiting(true);
         // Clear selectedAnswer immediately so buttons become enabled
         setSelectedAnswer("");
         setTimeout(() => {
-          setBlink(false);
           setFeedback("");
           setIsWaiting(false);
           // Requeue the wrong card without incrementing progress:

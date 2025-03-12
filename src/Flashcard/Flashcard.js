@@ -13,6 +13,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Autocomplete,
   TextField,
   Divider,
   IconButton,
@@ -135,6 +136,10 @@ function Flashcards() {
     return groups;
   }, {});
 
+  const categories = Array.from(
+    new Set(flashcards.map((fc) => fc.category))
+  ).filter(Boolean);
+
   return (
     <>
       <DefaultHeader />
@@ -198,13 +203,25 @@ function Flashcards() {
               onChange={handleInputChange}
               sx={{ mb: 2 }}
             />
-            <TextField
-              label="Deck"
-              name="category"
-              fullWidth
+            <Autocomplete
+              freeSolo
+              options={categories}
               value={newFlashcard.category}
-              onChange={handleInputChange}
-              sx={{ mb: 2 }}
+              onChange={(event, newValue) => {
+                setNewFlashcard((prev) => ({
+                  ...prev,
+                  category: newValue || "",
+                }));
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Deck"
+                  name="category"
+                  onChange={handleInputChange}
+                  sx={{ mb: 2 }}
+                />
+              )}
             />
           </DialogContent>
           <DialogActions>

@@ -165,12 +165,10 @@ function Study() {
     if (selectedAnswer || isWaiting) return;
 
     const currentCard = sessionDeck[currentIndex];
-    // Debug logs
     console.log("User clicked:", option);
     console.log("Currently displayed question:", currentCard.title);
     console.log("Correct answer:", currentCard.answer);
 
-    // Mark user selection
     setSelectedAnswer(option);
     const isCorrect =
       option.trim().toLowerCase() === currentCard.answer.trim().toLowerCase();
@@ -189,35 +187,38 @@ function Study() {
     if (isCorrect) {
       setFeedback("Correct");
       setScore((prevScore) => prevScore + 1);
-      // Move to the next card after a short delay
       setTimeout(() => {
         setFeedback("");
         setCurrentIndex((prevIndex) => prevIndex + 1);
       }, 1000);
     } else {
-      setFeedback("Incorrect");
-      setBlink(true);
-      setLives((prevLives) => prevLives - 1);
-      setIsWaiting(true);
-      // Immediately clear selectedAnswer
-      setSelectedAnswer("");
-
-      // Wait, then re-queue the wrong card and move on
-      const oldIndex = currentIndex; // capture the current index
-      setTimeout(() => {
-        setBlink(false);
-        setFeedback("");
-        setIsWaiting(false);
-
-        // Re-queue the card that was wrong
-        const newDeck = [...sessionDeck];
-        const [wrongCard] = newDeck.splice(oldIndex, 1);
-        newDeck.push(wrongCard);
-        setSessionDeck(newDeck);
-
-        // Move to the next question
-        setCurrentIndex((prevIndex) => prevIndex + 1);
-      }, 1000);
+      if (lives > 0) {
+        setFeedback("Incorrect");
+        setBlink(true);
+        setLives((prevLives) => Math.max(prevLives - 1, 0));
+        setIsWaiting(true);
+        // Clear selectedAnswer immediately so buttons become enabled
+        setSelectedAnswer("");
+        setTimeout(() => {
+          setBlink(false);
+          setFeedback("");
+          setIsWaiting(false);
+          // Requeue the wrong card without incrementing progress:
+          const newDeck = [...sessionDeck];
+          const [wrongCard] = newDeck.splice(currentIndex, 1);
+          newDeck.push(wrongCard);
+          setSessionDeck(newDeck);
+          // Do NOT increment currentIndex here so the same progress remains.
+        }, 1000);
+      } else {
+        setFeedback(`Incorrect. Correct answer: ${currentCard.answer}`);
+        setIsWaiting(true);
+        setTimeout(() => {
+          setFeedback("");
+          setIsWaiting(false);
+          setCurrentIndex((prevIndex) => prevIndex + 1);
+        }, 1000);
+      }
     }
   };
 
@@ -239,7 +240,7 @@ function Study() {
         <DefaultHeader />
         <Box sx={{ p: 2, textAlign: "center" }}>
           <Typography variant="h4" gutterBottom>
-            Select a Category to Study
+            Select a Deck to Study
           </Typography>
           <Grid container spacing={2} justifyContent="center">
             {categories.map((category, idx) => (
@@ -350,7 +351,9 @@ function Study() {
                 {feedback
                   ? feedback === "Correct"
                     ? "You got it!"
-                    : `Correct answer: ${currentCard.answer}`
+                    : lives < 0
+                    ? `Incorrect. Correct answer: ${currentCard.answer}`
+                    : "Incorrect"
                   : "Select an option below"}
               </Typography>
             </CardContent>

@@ -76,6 +76,22 @@ function Flashcards() {
     saveFlashcards(newFlashcards);
   };
 
+  const handleSave = () => {
+    if (editMode) {
+      const updatedFlashcards = flashcards.map((card) =>
+        card.id === currentId ? { ...card, ...newFlashcard } : card
+      );
+      setFlashcards(updatedFlashcards);
+      saveFlashcards(updatedFlashcards);
+    } else {
+      const newCard = { id: Date.now(), ...newFlashcard };
+      const updatedFlashcards = [...flashcards, newCard];
+      setFlashcards(updatedFlashcards);
+      saveFlashcards(updatedFlashcards);
+    }
+    handleDialogClose();
+  };
+
   const handleDialogClose = () => {
     setOpen(false);
     setNewFlashcard({ title: "", answer: "", category: "" });
@@ -147,6 +163,7 @@ function Flashcards() {
               fullWidth
               value={newFlashcard.title}
               onChange={handleInputChange}
+              sx={{ mb: 2 }}
             />
             <TextField
               label="Answer"
@@ -154,6 +171,7 @@ function Flashcards() {
               fullWidth
               value={newFlashcard.answer}
               onChange={handleInputChange}
+              sx={{ mb: 2 }}
             />
             <TextField
               label="Category"
@@ -161,14 +179,12 @@ function Flashcards() {
               fullWidth
               value={newFlashcard.category}
               onChange={handleInputChange}
+              sx={{ mb: 2 }}
             />
           </DialogContent>
           <DialogActions>
             <Button onClick={handleDialogClose}>Cancel</Button>
-            <Button
-              onClick={() => saveFlashcards(filteredFlashcards)}
-              variant="contained"
-            >
+            <Button onClick={handleSave} variant="contained">
               {editMode ? "Update" : "Save"}
             </Button>
           </DialogActions>

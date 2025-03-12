@@ -66,7 +66,7 @@ function History() {
                       <Box key={idx} sx={{ ml: 2 }}>
                         <Typography variant="body2">
                           {result.title} -{" "}
-                          {result.isCorrect ? "Correct" : "Incorrect"}
+                          {result.isCorrect ? "Correct" : "Incorrect"} - {result.answerRecord}
                         </Typography>
                       </Box>
                     ))}

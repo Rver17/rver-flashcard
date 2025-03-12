@@ -154,6 +154,13 @@ function Flashcards() {
             const updatedCards = [...flashcards, ...sampleFlashcards];
             setFlashcards(updatedCards);
             saveFlashcards(updatedCards);
+            Swal.fire({
+              title: "Sample Data Loaded",
+              text: "Sample flashcards have been added.",
+              icon: "success",
+              timer: 1500,
+              showConfirmButton: false,
+            });
           }}
           sx={{ m: 1 }}
         >

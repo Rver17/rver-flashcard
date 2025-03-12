@@ -351,7 +351,7 @@ function Study() {
                 {feedback
                   ? feedback === "Correct"
                     ? "You got it!"
-                    : lives < 0
+                    : lives === -1
                     ? `Incorrect. Correct answer: ${currentCard.answer}`
                     : "Incorrect"
                   : "Select an option below"}

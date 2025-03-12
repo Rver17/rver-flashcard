@@ -28,6 +28,7 @@ function Flashcards() {
   const [open, setOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [currentId, setCurrentId] = useState(null);
+  const [expandedCategories, setExpandedCategories] = useState({});
   const [newFlashcard, setNewFlashcard] = useState({
     title: "",
     answer: "",
@@ -67,6 +68,13 @@ function Flashcards() {
       setNewFlashcard({ title: "", answer: "", category: "" });
     }
     setOpen(true);
+  };
+
+  const toggleCategory = (category) => {
+    setExpandedCategories((prev) => ({
+      ...prev,
+      [category]: !prev[category],
+    }));
   };
 
   // Add this function in your Flashcards component
@@ -222,25 +230,41 @@ function Flashcards() {
         ) : (
           Object.keys(groupedFlashcards).map((category, idx) => (
             <Box key={idx} sx={{ mt: 4, textAlign: "center" }}>
-              <Typography variant="h5" gutterBottom>
-                Deck: {category}
-              </Typography>
-              {groupedFlashcards[category].map((card) => (
-                <Card key={card.id} sx={{ mb: 2, mx: "auto", maxWidth: 400 }}>
-                  <CardContent>
-                    <Typography variant="h6">{card.title}</Typography>
-                    <Typography color="text.secondary">
-                      {card.answer}
-                    </Typography>
-                    <IconButton onClick={() => handleDialogOpen(card)}>
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton onClick={() => handleDelete(card.id)}>
-                      <DeleteIcon />
-                    </IconButton>
-                  </CardContent>
-                </Card>
-              ))}
+              {/* Category Card */}
+              <Card
+                onClick={() => toggleCategory(category)}
+                sx={{ cursor: "pointer", mb: 2, mx: "auto", maxWidth: 400 }}
+              >
+                <CardContent>
+                  <Typography variant="h5">Deck: {category}</Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    align="center"
+                  >
+                    {groupedFlashcards[category].length} cards
+                  </Typography>
+                </CardContent>
+              </Card>
+
+              {/* Dropdown list of flashcards */}
+              {expandedCategories[category] &&
+                groupedFlashcards[category].map((card) => (
+                  <Card key={card.id} sx={{ mb: 2, mx: "auto", maxWidth: 400 }}>
+                    <CardContent>
+                      <Typography variant="h6">{card.title}</Typography>
+                      <Typography color="text.secondary">
+                        {card.answer}
+                      </Typography>
+                      <IconButton onClick={() => handleDialogOpen(card)}>
+                        <EditIcon />
+                      </IconButton>
+                      <IconButton onClick={() => handleDelete(card.id)}>
+                        <DeleteIcon />
+                      </IconButton>
+                    </CardContent>
+                  </Card>
+                ))}
             </Box>
           ))
         )}
